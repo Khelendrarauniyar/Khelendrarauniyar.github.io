@@ -85,19 +85,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }, observerOptions);
     
     // Observe elements for animation
-    document.querySelectorAll('.skill-category, .project-card, .timeline-item').forEach(el => {
+    document.querySelectorAll('.skill-category, .project-card, .timeline-item, .certification-card, .hobby-item, .language-item').forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(30px)';
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
+    });
+
+    // Add staggered animation for certification cards
+    document.querySelectorAll('.certification-card').forEach((card, index) => {
+        card.style.transitionDelay = `${index * 0.1}s`;
+    });
+
+    // Add staggered animation for hobby items
+    document.querySelectorAll('.hobby-item').forEach((item, index) => {
+        item.style.transitionDelay = `${index * 0.1}s`;
+    });
+
+    // Language level animation
+    const languageItems = document.querySelectorAll('.language-item');
+    const languageObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const levelFill = entry.target.querySelector('.level-fill');
+                if (levelFill) {
+                    setTimeout(() => {
+                        levelFill.style.transform = 'scaleX(1)';
+                    }, 500);
+                }
+            }
+        });
+    }, observerOptions);
+
+    languageItems.forEach(item => {
+        const levelFill = item.querySelector('.level-fill');
+        if (levelFill) {
+            levelFill.style.transformOrigin = 'left';
+            levelFill.style.transform = 'scaleX(0)';
+            levelFill.style.transition = 'transform 1s ease';
+        }
+        languageObserver.observe(item);
     });
     
     // Contact form handling
     const contactForm = document.querySelector('.contact-form');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
             // Get form data
             const formData = new FormData(this);
             const name = formData.get('name');
@@ -107,18 +140,36 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Simple form validation
             if (!name || !email || !subject || !message) {
+                e.preventDefault();
                 showNotification('Please fill in all fields.', 'error');
                 return;
             }
             
             if (!isValidEmail(email)) {
+                e.preventDefault();
                 showNotification('Please enter a valid email address.', 'error');
                 return;
             }
             
-            // Simulate form submission
-            showNotification('Thank you for your message! I\'ll get back to you soon.', 'success');
-            this.reset();
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
+            
+            // If form has action (Formspree), let it submit naturally
+            if (this.getAttribute('action') && this.getAttribute('action').includes('formspree')) {
+                // Form will submit to Formspree
+                showNotification('Sending your message...', 'info');
+                return; // Let the form submit naturally
+            }
+            
+            // Fallback: If no action is set, prevent default and show instruction
+            e.preventDefault();
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            
+            showNotification('Form not configured yet. Please contact directly via email or phone.', 'error');
         });
     }
     
